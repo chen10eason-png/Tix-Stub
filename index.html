@@ -38,7 +38,7 @@ main{max-width:760px;margin:auto;padding-bottom:100px}.toolbar{padding:12px 16px
 <div id="formModal" class="modal" onclick="backdrop(event,'formModal')"><div class="sheet"><div class="sheet-head"><h2 id="formTitle">新增票券</h2><button class="close" onclick="closeModal('formModal')">✕</button></div>
 <form id="ticketForm" onsubmit="saveTicket(event)"><input type="hidden" id="editId"><div class="form-grid">
 <div class="field full"><label>活動／班次名稱 *</label><input id="title" required placeholder="例如：五月天演唱會"></div><div class="field"><label>日期</label><input id="date" type="date"></div><div class="field"><label>時間</label><input id="time" type="time"></div><div class="field full"><label>場地／車站／機場</label><input id="venue" placeholder="例如：台北小巨蛋"></div><div class="field"><label>座位／車廂</label><input id="seat" placeholder="例如：A區 12排"></div><div class="field"><label>票價（NT$）</label><input id="price" type="number" min="0" step="1" placeholder="1500"></div><div class="field full"><label>同行人</label><input id="companions" placeholder="例如：Ray、小明"></div><div class="field full"><label>備註</label><textarea id="notes"></textarea></div><div class="field full"><label>分類</label><div id="catgrid" class="catgrid"></div></div>
-<div class="field full"><label>票券照片</label><div class="photo-box"><div id="photoPreview">尚未選擇照片</div><div class="photo-pick-actions"><button type="button" class="secondary photo-btn" onclick="pickPhoto()">🖼️ 選擇照片</button></div><input id="photoPhotos" type="file" accept="image/*" style="display:none" onchange="previewPhoto(event)"></div></div></div><div class="form-actions"><button type="button" class="secondary form-cancel" onclick="closeModal('formModal')">取消</button><button class="primary form-save" type="submit">💾 儲存票券</button></div></form></div></div>
+<div class="field full"><label>票券照片</label><div class="photo-box"><div id="photoPreview">尚未選擇照片</div><div class="photo-pick-actions"><button type="button" class="secondary photo-btn" onclick="pickPhoto()">🖼️ 選擇照片</button></div><input id="photoPhotos" type="file" accept="image/*" style="display:none" onchange="previewPhoto(event)"></div></div></div><div class="form-actions"><button type="button" class="secondary form-cancel" onclick="closeModal('formModal')">取消</button><button class="primary form-save" type="button" onclick="saveTicket(event)">💾 儲存票券</button></div></form></div></div>
 
 <div id="detailModal" class="modal" onclick="backdrop(event,'detailModal')"><div class="sheet"><div class="sheet-head"><h2>票券詳情</h2><button class="close" onclick="closeModal('detailModal')">✕</button></div><div id="detailContent"></div></div></div>
 <div id="settingsModal" class="modal" onclick="backdrop(event,'settingsModal')"><div class="sheet"><div class="sheet-head"><h2 id="settingsTitle">⚙️ 設定</h2><button class="close" onclick="closeModal('settingsModal')">✕</button></div><button class="secondary" onclick="exportData()" id="exportBtn">📦 匯出票券備份</button><button class="secondary" onclick="document.getElementById('importFile').click()" id="importBtn">📥 還原票券備份</button><input id="importFile" type="file" accept="application/json" style="display:none" onchange="importData(event)"><div class="settings-block"><h3 id="languageTitle">🌐 語言</h3><div class="language-options"><button type="button" class="language-btn" data-lang="zh" onclick="setLanguage('zh')">繁體中文</button><button type="button" class="language-btn" data-lang="en" onclick="setLanguage('en')">English</button><button type="button" class="language-btn" data-lang="ja" onclick="setLanguage('ja')">日本語</button></div></div><button class="secondary" onclick="confirmClearAll()" style="color:var(--danger)" id="clearBtn">🗑️ 清除全部票券</button></div></div>
@@ -68,97 +68,70 @@ function openForm(id=null){document.getElementById('ticketForm').reset();documen
 function editTicket(id){openForm(id)}
 function pickPhoto(){document.getElementById('photoPhotos').click()}
 function previewPhoto(e){let f=e.target.files&&e.target.files[0];if(!f)return;if(!f.type.startsWith('image/')){toast(appLang==='zh'?'請選擇圖片檔案':appLang==='ja'?'画像ファイルを選択してください':'Please choose an image file');e.target.value='';return}let r=new FileReader();r.onload=()=>{document.getElementById('photoPreview').innerHTML=`<img src="${r.result}" alt="">`;window._selectedPhotoData=r.result};r.readAsDataURL(f)}
-function saveTicket(e){e.preventDefault();let id=document.getElementById('editId').value,old=tickets.find(t=>t.id===id),f=document.getElementById('photoPhotos').files[0],finish=photo=>{let d={id:id||uid(),title:title.value.trim(),date:date.value,time:time.value,venue:venue.value.trim(),seat:seat.value.trim(),price:price.value,companions:companions.value.trim(),notes:notes.value.trim(),cat:selectedCat,photo,used:old?.used||false,starred:old?.starred||false,createdAt:old?.createdAt||Date.now()};tickets=id?tickets.map(t=>t.id===id?d:t):[...tickets,d];persist();closeModal('formModal');renderTickets();toast(id?'已更新票券':'已新增票券')};if(f){let r=new FileReader();r.onload=()=>finish(r.result);r.readAsDataURL(f)}else finish(old?.photo||'')}
-function deleteTicket(id){let t=tickets.find(x=>x.id===id);if(!t)return;if(confirm(`確定要刪除「${t.title||'這張票券'}」嗎？`)){tickets=tickets.filter(x=>x.id!==id);persist();renderTickets();toast('已刪除')}}
-function openDetail(id){let t=tickets.find(x=>x.id===id),c=catMap[t.cat]||catMap.other;if(!t)return;document.getElementById('detailContent').innerHTML=`${t.photo?`<img class="detail-photo" src="${t.photo}" alt="">`:`<div style="height:180px;border:1px dashed var(--line);border-radius:15px;display:grid;place-items:center;font-size:60px;background:#fff">${c.icon}</div>`}<h2>${esc(t.title)}</h2><span class="badge">${c.icon} ${c.label}</span><p style="color:var(--muted);line-height:1.8">${t.date?'📅 '+formatDate(t.date):''}${t.time?' · ⏰ '+t.time:''}<br>${t.venue?'📍 '+esc(t.venue):''}<br>${t.seat?'💺 '+esc(t.seat):''}<br>${t.price?money(t.price):''}${t.companions?'<br>👥 '+esc(t.companions):''}${t.notes?'<br>📝 '+esc(t.notes):''}</p><div class="action-row"><button onclick="quickShow('${id}')">🎟️ 快速出示</button><button onclick="toggleStar('${id}')">${t.starred?'★ 取消收藏':'☆ 收藏'}</button><button onclick="openMap('${t.venue}')">📍 前往場地</button><button onclick="downloadICS('${id}')">📅 加入行程</button><button onclick="toggleUsed('${id}')">${t.used?'↩️ 標記未使用':'✓ 標記已使用'}</button><button onclick="duplicateTicket('${id}')">➕ 複製票券</button><button onclick="editTicket('${id}');closeModal('detailModal')">✏️ 編輯</button><button onclick="deleteTicket('${id}');closeModal('detailModal')">🗑️ 刪除</button></div>`;document.getElementById('detailModal').classList.add('open')}
-function toggleStar(id){let t=tickets.find(x=>x.id===id);t.starred=!t.starred;persist();renderTickets();openDetail(id);toast(t.starred?'已加入收藏':'已取消收藏')}
-function toggleUsed(id){let t=tickets.find(x=>x.id===id);t.used=!t.used;persist();renderTickets();openDetail(id);toast(t.used?'已標記使用':'已恢復未使用')}
-function duplicateTicket(id){let t=tickets.find(x=>x.id===id);tickets.push({...t,id:uid(),title:(t.title||'票券')+'（同行票）',used:false,starred:false});persist();renderTickets();closeModal('detailModal');toast('已複製票券')}
-function quickShow(id){let t=tickets.find(x=>x.id===id),c=catMap[t.cat]||catMap.other;document.getElementById('quickTitle').textContent=t.title||'未命名活動';document.getElementById('quickMeta').textContent=[t.date?formatDate(t.date):'',t.time||'',t.venue||'',t.seat||''].filter(Boolean).join(' · ');document.getElementById('quickPhoto').innerHTML=t.photo?`<img src="${t.photo}" alt="">`:`<div style="font-size:80px">${c.icon}</div>`;document.getElementById('quick').classList.add('open')}
-function closeQuick(){document.getElementById('quick').classList.remove('open')}
-function openMap(v){if(!v){toast('請先填寫場地');return}window.open('https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(v),'_blank')}
-function downloadICS(id){let t=tickets.find(x=>x.id===id);if(!t?.date){toast('請先填寫活動日期');return}let start=new Date(t.date+'T'+(t.time||'00:00')+':00'),end=new Date(start.getTime()+7200000),pad=n=>String(n).padStart(2,'0'),fmt=d=>d.getFullYear()+pad(d.getMonth()+1)+pad(d.getDate())+'T'+pad(d.getHours())+pad(d.getMinutes())+pad(d.getSeconds()),ics=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//TIX-STUB//ZH','BEGIN:VEVENT','UID:'+t.id+'@tixstub','DTSTAMP:'+fmt(new Date()),'DTSTART:'+fmt(start),'DTEND:'+fmt(end),'SUMMARY:'+t.title,'LOCATION:'+(t.venue||''),'DESCRIPTION:'+(t.notes||''),'END:VEVENT','END:VCALENDAR'].join('\r\n'),a=document.createElement('a');a.href=URL.createObjectURL(new Blob([ics],{type:'text/calendar'}));a.download=(t.title||'event')+'.ics';a.click();toast('已建立行程檔案')}
-function renderCalendar(){let up=tickets.filter(t=>!t.used&&t.date&&daysUntil(t.date)>=0).sort((a,b)=>a.date.localeCompare(b.date)),past=tickets.filter(t=>t.date&&(t.used||daysUntil(t.date)<0)).sort((a,b)=>b.date.localeCompare(a.date));let rows=a=>a.length?a.map(t=>{let d=new Date(t.date+'T00:00:00'),c=catMap[t.cat]||catMap.other;return `<div class="event" onclick="openDetail('${t.id}')"><div class="datebox"><small>${d.getMonth()+1}月</small><b>${d.getDate()}</b></div><div class="event-main"><b>${c.icon} ${esc(t.title)}</b><span>${t.time||'時間未填'}${t.venue?' · 📍 '+esc(t.venue):''}</span></div></div>`}).join(''):'<div style="color:var(--muted);font-size:12px">目前沒有資料</div>';document.getElementById('calendarContent').innerHTML=`<div class="calendar-card"><div class="section-title">📅 即將到來</div>${rows(up)}</div><div class="calendar-card"><div class="section-title">🗂️ 已完成／過期</div>${rows(past)}</div>`}
-function renderSpending(){let total=tickets.reduce((s,t)=>s+(Number(t.price)||0),0),p=tickets.filter(t=>Number(t.price)>0),avg=p.length?total/p.length:0,by={};tickets.forEach(t=>by[t.cat]=(by[t.cat]||0)+(Number(t.price)||0));let e=Object.entries(by).filter(x=>x[1]>0).sort((a,b)=>b[1]-a[1]),max=e[0]?.[1]||1,top=p.sort((a,b)=>b.price-a.price)[0];document.getElementById('spendingContent').innerHTML=`<div class="spend-card"><div style="color:var(--muted);font-size:11px">累計花費</div><div class="big-money">${money(total)}</div></div><div class="mini-grid"><div class="mini"><b>${money(Math.round(avg))}</b><span>平均票價</span></div><div class="mini"><b>${p.length}</b><span>有票價的票券</span></div></div>${top?`<div class="spend-card"><div style="color:var(--muted);font-size:11px">最貴的一張票</div><b>${esc(top.title)}</b><div style="font-size:21px;font-weight:900">${money(top.price)}</div></div>`:''}<div class="spend-card"><div class="section-title">💰 各分類花費</div>${e.length?e.map(([id,n])=>{let c=catMap[id]||catMap.other;return `<div class="bar"><div class="bar-label"><span>${c.icon} ${c.label}</span><b>${money(Math.round(n))}</b></div><div class="track"><div class="fill" style="width:${n/max*100}%"></div></div></div>`}).join(''):'<div style="color:var(--muted);font-size:12px">填寫票價後就會出現分析</div>'}</div>`}
-function switchView(v){document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));document.getElementById(v+'View').classList.add('active');document.querySelectorAll('.nav-btn').forEach(x=>x.classList.toggle('active',x.dataset.view===v));if(v==='calendar')renderCalendar();if(v==='spending')renderSpending()}
-function closeModal(id){document.getElementById(id).classList.remove('open')}function backdrop(e,id){if(e.target.id===id)closeModal(id)}function openSettings(){document.getElementById('settingsModal').classList.add('open')}
-function exportData(){let a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(tickets,null,2)],{type:'application/json'}));a.download='TIX-STUB-backup.json';a.click();toast('備份已匯出')}
-function importData(e){let f=e.target.files[0];if(!f)return;let r=new FileReader();r.onload=()=>{try{let x=JSON.parse(r.result);if(!Array.isArray(x))throw 0;tickets=x;persist();renderTickets();toast('備份已還原')}catch(_){toast('備份檔案格式不正確')}};r.readAsText(f)}
-function clearAll(){if(tickets.length&&confirm('確定清除全部票券嗎？')){tickets=[];persist();renderTickets();closeModal('settingsModal');toast('已清除全部票券')}}
-let toastTimer;function toast(s){let e=document.getElementById('toast');e.textContent=s;e.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>e.classList.remove('show'),1800)}
-
-/* TIX·STUB v4 localization + modal safety fixes */
-const LANG={
-zh:{appSub:'Collect your tickets & memories',navTickets:'🎟️ 我的票券',navCalendar:'📅 行程',navSpending:'💰 消費分析',search:'搜尋活動、場地、座位、同行人、備註…',all:'全部',upcoming:'即將到來',used:'已使用',fav:'收藏',allTickets:'全部票券',upcomingCount:'即將到來',spent:'累計花費',empty:'目前沒有符合條件的票券',emptyHint:'點右下角「＋ 新增票券」開始收藏',newTicket:'新增票券',editTicket:'編輯票券',save:'💾 儲存票券',cancel:'取消',title:'活動／班次名稱 *',titlePh:'例如：五月天演唱會',date:'日期',time:'時間',venue:'場地／車站／機場',venuePh:'例如：台北小巨蛋',seat:'座位／車廂',seatPh:'例如：A區 12排',price:'票價（NT$）',pricePh:'1500',companions:'同行人',companionsPh:'例如：Ray、小明',notes:'備註',category:'分類',photo:'票券照片',noPhoto:'尚未選擇照片',photoAlbum:'🖼️ 從相簿選擇',photoFile:'📁 選擇檔案',detail:'票券詳情',show:'🎟️ 快速出示',favoriteAdd:'☆ 收藏',favoriteRemove:'★ 取消收藏',map:'📍 前往場地',calendarAdd:'📅 加入行程',usedBtn:'✓ 標記已使用',unusedBtn:'↩️ 標記未使用',duplicate:'➕ 複製票券',edit:'✏️ 編輯',delete:'🗑️ 刪除',settings:'⚙️ 設定',export:'📦 匯出票券備份',import:'📥 還原票券備份',language:'🌐 語言',clear:'🗑️ 清除全部票券',confirmTitle:'⚠️ 確認操作',confirmQ:'確定要清除全部票券嗎？',confirmD:'這個操作會刪除目前裝置上的所有票券資料，而且無法復原。建議先匯出備份。',confirm:'確定清除',noData:'目前沒有資料',calendarUpcoming:'📅 即將到來',calendarPast:'🗂️ 已完成／過期',timeMissing:'時間未填',avg:'平均票價',priced:'有票價的票券',most:'最貴的一張票',byCat:'💰 各分類花費',analysisHint:'填寫票價後就會出現分析',today:'就是今天！',days:'還有 {n} 天',expired:'已過期',dateMissing:'日期未填',unnamed:'未命名活動',deleted:'已刪除',added:'已新增票券',updated:'已更新票券',usedToast:'已標記使用',unusedToast:'已恢復未使用',favOn:'已加入收藏',favOff:'已取消收藏',copy:'已複製票券',exported:'備份已匯出',imported:'備份已還原',badBackup:'備份檔案格式不正確',noTickets:'目前沒有票券',mapMissing:'請先填寫場地',eventDateMissing:'請先填寫活動日期',month:'月'},
-en:{appSub:'Collect your tickets & memories',navTickets:'🎟️ My Tickets',navCalendar:'📅 Schedule',navSpending:'💰 Spending',search:'Search events, venues, seats, companions, notes…',all:'All',upcoming:'Upcoming',used:'Used',fav:'Favorites',allTickets:'All Tickets',upcomingCount:'Upcoming',spent:'Total Spent',empty:'No tickets match your filters',emptyHint:'Tap “＋ Add Ticket” to start collecting',newTicket:'New Ticket',editTicket:'Edit Ticket',save:'💾 Save Ticket',cancel:'Cancel',title:'Event / Trip Name *',titlePh:'e.g. Concert, train, museum',date:'Date',time:'Time',venue:'Venue / Station / Airport',venuePh:'e.g. Taipei Arena',seat:'Seat / Car',seatPh:'e.g. Section A, Row 12',price:'Price (NT$)',pricePh:'1500',companions:'Companions',companionsPh:'e.g. Ray, Alex',notes:'Notes',category:'Category',photo:'Ticket Photo',noPhoto:'No photo selected',photoAlbum:'🖼️ Choose from Photos',photoFile:'📁 Choose File',detail:'Ticket Details',show:'🎟️ Show Ticket',favoriteAdd:'☆ Favorite',favoriteRemove:'★ Remove Favorite',map:'📍 Go to Venue',calendarAdd:'📅 Add to Schedule',usedBtn:'✓ Mark Used',unusedBtn:'↩️ Mark Unused',duplicate:'➕ Duplicate Ticket',edit:'✏️ Edit',delete:'🗑️ Delete',settings:'⚙️ Settings',export:'📦 Export Ticket Backup',import:'📥 Restore Ticket Backup',language:'🌐 Language',clear:'🗑️ Clear All Tickets',confirmTitle:'⚠️ Confirm Action',confirmQ:'Clear all tickets?',confirmD:'This will delete every ticket stored on this device and cannot be undone. Export a backup first if needed.',confirm:'Clear All',noData:'No data',calendarUpcoming:'📅 Upcoming',calendarPast:'🗂️ Completed / Past',timeMissing:'Time not set',avg:'Average Price',priced:'Tickets With Price',most:'Most Expensive Ticket',byCat:'💰 Spending by Category',analysisHint:'Add ticket prices to see analysis',today:'Today!',days:'{n} days left',expired:'Past',dateMissing:'Date not set',unnamed:'Untitled Event',deleted:'Deleted',added:'Ticket added',updated:'Ticket updated',usedToast:'Marked as used',unusedToast:'Marked as unused',favOn:'Added to favorites',favOff:'Removed from favorites',copy:'Ticket duplicated',exported:'Backup exported',imported:'Backup restored',badBackup:'Invalid backup file format',noTickets:'There are no tickets',mapMissing:'Please enter a venue first',eventDateMissing:'Please enter an event date first',month:''},
-ja:{appSub:'Collect your tickets & memories',navTickets:'🎟️ チケット',navCalendar:'📅 予定',navSpending:'💰 支出分析',search:'イベント・会場・座席・同行者・メモを検索…',all:'すべて',upcoming:'今後',used:'使用済み',fav:'お気に入り',allTickets:'チケット数',upcomingCount:'今後の予定',spent:'合計支出',empty:'条件に一致するチケットはありません',emptyHint:'「＋ チケットを追加」から始めてください',newTicket:'チケットを追加',editTicket:'チケットを編集',save:'💾 保存',cancel:'キャンセル',title:'イベント／予定名 *',titlePh:'例：コンサート、新幹線、博物館',date:'日付',time:'時間',venue:'会場／駅／空港',venuePh:'例：東京ドーム',seat:'座席／車両',seatPh:'例：Aブロック 12列',price:'料金（NT$）',pricePh:'1500',companions:'同行者',companionsPh:'例：Ray、Alex',notes:'メモ',category:'カテゴリー',photo:'チケット写真',noPhoto:'写真が選択されていません',photoAlbum:'🖼️ 写真から選択',photoFile:'📁 ファイルを選択',detail:'チケット詳細',show:'🎟️ チケットを表示',favoriteAdd:'☆ お気に入り',favoriteRemove:'★ お気に入りから削除',map:'📍 会場へ',calendarAdd:'📅 予定に追加',usedBtn:'✓ 使用済みにする',unusedBtn:'↩️ 未使用に戻す',duplicate:'➕ チケットを複製',edit:'✏️ 編集',delete:'🗑️ 削除',settings:'⚙️ 設定',export:'📦 バックアップを書き出す',import:'📥 バックアップを復元',language:'🌐 言語',clear:'🗑️ すべてのチケットを削除',confirmTitle:'⚠️ 操作の確認',confirmQ:'すべてのチケットを削除しますか？',confirmD:'この端末に保存されたすべてのチケットが削除され、元に戻せません。必要なら先にバックアップしてください。',confirm:'すべて削除',noData:'データなし',calendarUpcoming:'📅 今後の予定',calendarPast:'🗂️ 完了／過去',timeMissing:'時間未設定',avg:'平均料金',priced:'料金入力済み',most:'最高額のチケット',byCat:'💰 カテゴリー別支出',analysisHint:'料金を入力すると分析が表示されます',today:'今日！',days:'あと {n} 日',expired:'過去',dateMissing:'日付未設定',unnamed:'名称未設定',deleted:'削除しました',added:'チケットを追加しました',updated:'チケットを更新しました',usedToast:'使用済みにしました',unusedToast:'未使用に戻しました',favOn:'お気に入りに追加しました',favOff:'お気に入りから削除しました',copy:'チケットを複製しました',exported:'バックアップを書き出しました',imported:'バックアップを復元しました',badBackup:'バックアップ形式が正しくありません',noTickets:'チケットはありません',mapMissing:'先に会場を入力してください',eventDateMissing:'先に日付を入力してください',month:'月'}
-};
-const CAT_LANG={concert:['演唱會','Concert','コンサート'],sports:['球賽','Sports','スポーツ'],museum:['博物館','Museum','博物館'],exhibition:['展覽','Exhibition','展示'],movie:['電影','Movie','映画'],theatre:['舞台劇','Theatre','舞台'],festival:['音樂祭','Festival','音楽フェス'],transport:['交通','Transport','交通'],flight:['飛機','Flight','飛行機'],rail:['火車','Train','鉄道'],bus:['公車','Bus','バス'],metro:['捷運','Metro','地下鉄'],ferry:['船票','Ferry','フェリー'],theme:['樂園','Theme Park','テーマパーク'],aquarium:['水族館','Aquarium','水族館'],zoo:['動物園','Zoo','動物園'],attraction:['景點','Attraction','観光地'],sports_event:['運動活動','Sports Event','スポーツイベント'],other:['其他','Other','その他']};
-let appLang=localStorage.getItem('tixstub_lang')||'zh';
-const L=()=>LANG[appLang]||LANG.zh;
-function catName(id){let a=CAT_LANG[id]||CAT_LANG.other;return a[appLang==='zh'?0:appLang==='en'?1:2]}
-function applyLanguage(){document.documentElement.lang=appLang==='zh'?'zh-Hant':appLang==='ja'?'ja':'en';document.title='TIX·STUB';
- const set=(id,key)=>{let e=document.getElementById(id);if(e)e.textContent=L()[key]};
- set('settingsTitle','settings');set('exportBtn','export');set('importBtn','import');set('languageTitle','language');set('clearBtn','clear');set('confirmTitle','confirmTitle');set('confirmQuestion','confirmQ');set('confirmDescription','confirmD');set('cancelClearBtn','cancel');set('confirmClearBtn','confirm');
- document.querySelector('header .brand p').textContent=L().appSub;document.querySelector('[data-view="tickets"]').textContent=L().navTickets;document.querySelector('[data-view="calendar"]').textContent=L().navCalendar;document.querySelector('[data-view="spending"]').textContent=L().navSpending;document.getElementById('search').placeholder=L().search;
- const labels={title:'title',date:'date',time:'time',venue:'venue',seat:'seat',price:'price',companions:'companions',notes:'notes',category:'category',photo:'photo'};Object.entries(labels).forEach(([id,key])=>{let e=document.getElementById(id),lab=e?.parentElement?.querySelector('label');if(lab)lab.textContent=L()[key]});
- const ph={title:'titlePh',venue:'venuePh',seat:'seatPh',price:'pricePh',companions:'companionsPh'};Object.entries(ph).forEach(([id,key])=>{let e=document.getElementById(id);if(e)e.placeholder=L()[key]});
- document.getElementById('formTitle').textContent=document.getElementById('editId').value?L().editTicket:L().newTicket;
- document.querySelector('#ticketForm .primary').textContent=L().save;document.querySelector('#ticketForm .form-cancel').textContent=L().cancel;document.querySelector('.photo-pick-actions .photo-btn').textContent=L().photoAlbum;
- document.querySelectorAll('.language-btn').forEach(b=>b.classList.toggle('active',b.dataset.lang===appLang));
- renderFilters();renderCatGrid();renderTickets(); if(document.getElementById('calendarView').classList.contains('active'))renderCalendar(); if(document.getElementById('spendingView').classList.contains('active'))renderSpending();
-}
-function setLanguage(x){appLang=x;localStorage.setItem('tixstub_lang',x);applyLanguage()}
-function renderFilters(){document.getElementById('filters').innerHTML=`<button class="filter ${filter==='all'?'active':''}" onclick="setFilter('all')">${L().all}</button><button class="filter ${filter==='upcoming'?'active':''}" onclick="setFilter('upcoming')">${L().upcoming}</button><button class="filter ${filter==='used'?'active':''}" onclick="setFilter('used')">${L().used}</button><button class="filter ${filter==='fav'?'active':''}" onclick="setFilter('fav')">${L().fav}</button>`+CATS.map(c=>`<button class="filter ${filter===c[0]?'active':''}" onclick="setFilter('${c[0]}')">${c[2]} ${catName(c[0])}</button>`).join('')}
-function renderStats(){let total=tickets.length,up=tickets.filter(t=>!t.used&&daysUntil(t.date)>=0).length,spent=tickets.reduce((a,t)=>a+(Number(t.price)||0),0);document.getElementById('stats').innerHTML=`<div class="stat"><b>${total}</b><span>${L().allTickets}</span></div><div class="stat"><b>${up}</b><span>${L().upcomingCount}</span></div><div class="stat"><b>${money(spent).replace('NT$ ','')}</b><span>${L().spent}</span></div>`}
-function renderCatGrid(){document.getElementById('catgrid').innerHTML=CATS.map(c=>`<button type="button" class="cat ${selectedCat===c[0]?'selected':''}" onclick="selectedCat='${c[0]}';renderCatGrid()"><strong>${c[2]}</strong>${catName(c[0])}</button>`).join('')}
-function statusText(t){let d=daysUntil(t.date);return t.used?L().used:d===null?L().dateMissing:d===0?L().today:d>0?L().days.replace('{n}',d):L().expired}
-function renderTickets(){renderStats();let a=filtered(),el=document.getElementById('cards');if(!a.length){el.innerHTML=`<div class="empty">🎟️<br><br>${L().empty}<br><small>${L().emptyHint}</small></div>`;return}el.innerHTML=a.map(t=>{let c=catMap[t.cat]||catMap.other;return `<article class="ticket"><div class="ticket-top" onclick="openDetail('${t.id}')">${t.photo?`<img class="ticket-thumb" src="${t.photo}" alt="">`:`<div class="ticket-thumb" style="display:grid;place-items:center;font-size:34px">${c.icon}</div>`}<div class="ticket-info"><div class="ticket-title">${esc(t.title||L().unnamed)}</div><div class="ticket-meta">${t.date?formatDate(t.date):L().dateMissing}${t.time?' · '+esc(t.time):''}<br>${t.venue?'📍 '+esc(t.venue):''}${t.seat?' · '+esc(t.seat):''}</div><span class="badge">${c.icon} ${catName(t.cat)} · ${statusText(t)}</span></div><div>${t.starred?'★':''}</div></div><div class="ticket-actions"><button onclick="event.stopPropagation();quickShow('${t.id}')">${L().show}</button><button onclick="event.stopPropagation();editTicket('${t.id}')">${L().edit}</button><button class="danger" onclick="event.stopPropagation();deleteTicket('${t.id}')">${L().delete}</button></div></article>`}).join('')}
-function openForm(id=null){document.getElementById('ticketForm').reset();document.getElementById('editId').value=id||'';selectedCat=id?(tickets.find(t=>t.id===id)?.cat||'other'):'other';document.getElementById('photoPreview').innerHTML=L().noPhoto;if(id){let t=tickets.find(x=>x.id===id);['title','date','time','venue','seat','price','companions','notes'].forEach(k=>document.getElementById(k).value=t[k]||'');document.getElementById('photoPreview').innerHTML=t.photo?`<img src="${t.photo}" alt="">`:L().noPhoto}document.getElementById('formTitle').textContent=id?L().editTicket:L().newTicket;renderCatGrid();let sh=document.querySelector('#formModal .sheet');if(sh)sh.scrollTop=0;document.getElementById('formModal').classList.add('open')}
-function pickPhoto(){document.getElementById('photoPhotos').click()}
-function previewPhoto(e){let f=e.target.files&&e.target.files[0];if(!f)return;if(!f.type.startsWith('image/')){toast(appLang==='zh'?'請選擇圖片檔案':appLang==='ja'?'画像ファイルを選択してください':'Please choose an image file');e.target.value='';return}let r=new FileReader();r.onload=()=>{document.getElementById('photoPreview').innerHTML=`<img src="${r.result}" alt="">`;window._selectedPhotoData=r.result};r.readAsDataURL(f)}
 function saveTicket(e){
-e.preventDefault();
-try{
- const get=id=>document.getElementById(id);
- const id=get('editId').value;
- const old=tickets.find(t=>t.id===id);
- const f=get('photoPhotos').files[0];
- const d={
-  id:id||uid(),
-  title:get('title').value.trim(),
-  date:get('date').value,
-  time:get('time').value,
-  venue:get('venue').value.trim(),
-  seat:get('seat').value.trim(),
-  price:get('price').value,
-  companions:get('companions').value.trim(),
-  notes:get('notes').value.trim(),
-  cat:selectedCat,
-  photo:'',
-  used:old?.used||false,
-  starred:old?.starred||false,
-  createdAt:old?.createdAt||Date.now()
- };
- const finish=photo=>{
-  d.photo=photo||'';
-  if(id) tickets=tickets.map(t=>t.id===id?d:t);
-  else tickets=[...tickets,d];
-  persist();
-  closeModal('formModal');
-  renderTickets();
-  toast(id?L().updated:L().added);
- };
- if(f){
-  const r=new FileReader();
-  r.onload=()=>finish(r.result);
-  r.onerror=()=>finish(old?.photo||'');
-  r.readAsDataURL(f);
- }else finish(old?.photo||'');
-}catch(err){
- console.error('saveTicket error:',err);
- toast(appLang==='zh'?'儲存失敗，請再試一次':appLang==='ja'?'保存に失敗しました。もう一度お試しください':'Save failed. Please try again');
-}
+ if(e&&e.preventDefault)e.preventDefault();
+ const byId=id=>document.getElementById(id);
+ const titleEl=byId('title');
+ if(!titleEl || !titleEl.value.trim()){
+   titleEl?.focus();
+   toast(appLang==='zh'?'請輸入活動／班次名稱':appLang==='ja'?'イベント／予定名を入力してください':'Please enter an event / trip name');
+   return false;
+ }
+ try{
+   const id=byId('editId').value;
+   const old=tickets.find(t=>t.id===id);
+   const fileInput=byId('photoPhotos');
+   const file=fileInput&&fileInput.files?fileInput.files[0]:null;
+
+   const ticket={
+     id:id||uid(),
+     title:titleEl.value.trim(),
+     date:byId('date').value,
+     time:byId('time').value,
+     venue:byId('venue').value.trim(),
+     seat:byId('seat').value.trim(),
+     price:byId('price').value,
+     companions:byId('companions').value.trim(),
+     notes:byId('notes').value.trim(),
+     cat:selectedCat||'other',
+     photo:old?.photo||'',
+     used:old?.used||false,
+     starred:old?.starred||false,
+     createdAt:old?.createdAt||Date.now()
+   };
+
+   const finish=photo=>{
+     ticket.photo=photo||'';
+     if(id) tickets=tickets.map(t=>t.id===id?ticket:t);
+     else tickets.push(ticket);
+     try{persist();}catch(storageError){
+       console.error(storageError);
+       toast(appLang==='zh'?'儲存空間不足，請先移除大型照片':appLang==='ja'?'保存容量が不足しています。大きな写真を削除してください':'Storage is full. Try removing a large photo');
+       return;
+     }
+     closeModal('formModal');
+     renderTickets();
+     toast(id?L().updated:L().added);
+   };
+
+   if(file){
+     if(!file.type.startsWith('image/')){
+       toast(appLang==='zh'?'請選擇圖片檔案':appLang==='ja'?'画像ファイルを選択してください':'Please choose an image file');
+       return false;
+     }
+     const reader=new FileReader();
+     reader.onload=()=>finish(reader.result);
+     reader.onerror=()=>{toast(appLang==='zh'?'照片讀取失敗，請重新選擇':appLang==='ja'?'写真の読み込みに失敗しました':'Could not read the photo');};
+     reader.readAsDataURL(file);
+   }else{
+     finish(ticket.photo);
+   }
+   return false;
+ }catch(err){
+   console.error('TIX-STUB saveTicket error:',err);
+   toast(appLang==='zh'?'儲存失敗，請再試一次':appLang==='ja'?'保存に失敗しました。もう一度お試しください':'Save failed. Please try again');
+   return false;
+ }
 }
 function deleteTicket(id){let t=tickets.find(x=>x.id===id);if(!t)return;if(confirm((appLang==='zh'?'確定要刪除「':appLang==='ja'?'「':'Delete “')+(t.title||L().unnamed)+(appLang==='zh'?'」嗎？':appLang==='ja'?'」を削除しますか？':'”?'))){tickets=tickets.filter(x=>x.id!==id);persist();renderTickets();closeModal('detailModal');toast(L().deleted)}}
 function openDetail(id){let t=tickets.find(x=>x.id===id),c=catMap[t.cat]||catMap.other;if(!t)return;document.getElementById('detailContent').innerHTML=`${t.photo?`<img class="detail-photo" src="${t.photo}" alt="">`:`<div style="height:180px;border:1px dashed var(--line);border-radius:15px;display:grid;place-items:center;font-size:60px;background:#fff">${c.icon}</div>`}<h2>${esc(t.title||L().unnamed)}</h2><span class="badge">${c.icon} ${catName(t.cat)}</span><p style="color:var(--muted);line-height:1.8">${t.date?'📅 '+formatDate(t.date):''}${t.time?' · ⏰ '+t.time:''}<br>${t.venue?'📍 '+esc(t.venue):''}<br>${t.seat?'💺 '+esc(t.seat):''}<br>${t.price?money(t.price):''}${t.companions?'<br>👥 '+esc(t.companions):''}${t.notes?'<br>📝 '+esc(t.notes):''}</p><div class="action-row"><button onclick="quickShow('${id}')">${L().show}</button><button onclick="toggleStar('${id}')">${t.starred?L().favoriteRemove:L().favoriteAdd}</button><button onclick="openMap('${t.venue}')">${L().map}</button><button onclick="downloadICS('${id}')">${L().calendarAdd}</button><button onclick="toggleUsed('${id}')">${t.used?L().unusedBtn:L().usedBtn}</button><button onclick="duplicateTicket('${id}')">${L().duplicate}</button><button onclick="editTicket('${id}');closeModal('detailModal')">${L().edit}</button><button onclick="deleteTicket('${id}')">${L().delete}</button></div>`;let sh=document.querySelector('#detailModal .sheet');if(sh)sh.scrollTop=0;document.getElementById('detailModal').classList.add('open')}
