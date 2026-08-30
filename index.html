@@ -66,39 +66,21 @@ function renderTickets(){renderStats();let a=filtered(),el=document.getElementBy
 function renderCatGrid(){document.getElementById('catgrid').innerHTML=CATS.map(c=>`<button type="button" class="cat ${selectedCat===c[0]?'selected':''}" onclick="selectedCat='${c[0]}';renderCatGrid()"><strong>${c[2]}</strong>${c[1]}</button>`).join('')}
 function openForm(id=null){document.getElementById('ticketForm').reset();document.getElementById('editId').value=id||'';selectedCat=id?(tickets.find(t=>t.id===id)?.cat||'other'):'other';document.getElementById('photoPhotos').value='';document.getElementById('formTitle').textContent=id?'編輯票券':'新增票券';document.getElementById('photoPreview').innerHTML=L().noPhoto;if(id){let t=tickets.find(x=>x.id===id);['title','date','time','venue','seat','price','companions','notes'].forEach(k=>document.getElementById(k).value=t[k]||'');document.getElementById('photoPreview').innerHTML=t.photo?`<img src="${t.photo}" alt="">`:L().noPhoto}renderCatGrid();applyLanguage();let sh=document.querySelector('#formModal .sheet');if(sh)sh.scrollTop=0;document.getElementById('formModal').classList.add('open')}
 function editTicket(id){openForm(id)}
-function previewPhoto(e){
- const f=e.target.files&&e.target.files[0]; if(!f)return;
- if(!f.type.startsWith('image/')){toast(appLang==='zh'?'請選擇圖片檔案':appLang==='ja'?'画像ファイルを選択してください':'Please choose an image file');e.target.value='';return}
- const r=new FileReader(); r.onload=()=>document.getElementById('photoPreview').innerHTML=`<img src="${r.result}" alt="">`; r.readAsDataURL(f);
-}" alt="">`;r.readAsDataURL(f)}
+function previewPhoto(e){let f=e.target.files[0];if(!f)return;let r=new FileReader();r.onload=()=>document.getElementById('photoPreview').innerHTML=`<img src="${r.result}" alt="">`;r.readAsDataURL(f)}
 function pickPhoto(){document.getElementById('photoPhotos').click()}
-function previewPhoto(e){
- const f=e.target.files&&e.target.files[0]; if(!f)return;
- if(!f.type.startsWith('image/')){toast(appLang==='zh'?'請選擇圖片檔案':appLang==='ja'?'画像ファイルを選択してください':'Please choose an image file');e.target.value='';return}
- const r=new FileReader(); r.onload=()=>document.getElementById('photoPreview').innerHTML=`<img src="${r.result}" alt="">`; r.readAsDataURL(f);
-}let r=new FileReader();r.onload=()=>{document.getElementById('photoPreview').innerHTML=`<img src="${r.result}" alt="">`;window._selectedPhotoData=r.result};r.readAsDataURL(f)}
+function previewPhoto(e){let f=e.target.files&&e.target.files[0];if(!f)return;if(!f.type.startsWith('image/')){toast(appLang==='zh'?'請選擇圖片檔案':appLang==='ja'?'画像ファイルを選択してください':'Please choose an image file');e.target.value='';return}let r=new FileReader();r.onload=()=>{document.getElementById('photoPreview').innerHTML=`<img src="${r.result}" alt="">`;window._selectedPhotoData=r.result};r.readAsDataURL(f)}
 function saveTicket(e){
  e.preventDefault();
- const get=id=>document.getElementById(id);
- const id=get('editId').value;
+ const g=id=>document.getElementById(id);
+ const id=g('editId').value;
  const old=tickets.find(t=>t.id===id);
- const file=get('photoPhotos').files[0];
- const ticket={
-  id:id||uid(),title:get('title').value.trim(),date:get('date').value,time:get('time').value,
-  venue:get('venue').value.trim(),seat:get('seat').value.trim(),price:get('price').value,
-  companions:get('companions').value.trim(),notes:get('notes').value.trim(),
-  cat:selectedCat||'other',photo:old?.photo||'',used:old?.used||false,starred:old?.starred||false,
-  createdAt:old?.createdAt||Date.now()
- };
- const finish=photo=>{
-  ticket.photo=photo||'';
-  if(id) tickets=tickets.map(t=>t.id===id?ticket:t); else tickets=[...tickets,ticket];
-  persist(); closeModal('formModal'); renderTickets(); toast(id?L().updated:L().added);
- };
- if(file){const reader=new FileReader();reader.onload=()=>finish(reader.result);reader.onerror=()=>toast(appLang==='zh'?'照片讀取失敗':appLang==='ja'?'写真の読み込みに失敗しました':'Could not read photo');reader.readAsDataURL(file)}
- else finish(ticket.photo);
+ const input=g('photoPhotos');
+ const f=input&&input.files&&input.files[0];
+ const d={id:id||uid(),title:g('title').value.trim(),date:g('date').value,time:g('time').value,venue:g('venue').value.trim(),seat:g('seat').value.trim(),price:g('price').value,companions:g('companions').value.trim(),notes:g('notes').value.trim(),cat:selectedCat||'other',photo:old?.photo||'',used:old?.used||false,starred:old?.starred||false,createdAt:old?.createdAt||Date.now()};
+ const finish=photo=>{d.photo=photo||'';tickets=id?tickets.map(t=>t.id===id?d:t):[...tickets,d];persist();closeModal('formModal');renderTickets();toast(id?L().updated:L().added)};
+ if(f){const r=new FileReader();r.onload=()=>finish(r.result);r.onerror=()=>toast(appLang==='zh'?'照片讀取失敗':appLang==='ja'?'写真の読み込みに失敗しました':'Could not read photo');r.readAsDataURL(f)}else finish(d.photo);
  return false;
-};tickets=id?tickets.map(t=>t.id===id?d:t):[...tickets,d];persist();closeModal('formModal');renderTickets();toast(id?'已更新票券':'已新增票券')};if(f){let r=new FileReader();r.onload=()=>finish(r.result);r.readAsDataURL(f)}else finish(old?.photo||'')}
+}
 function deleteTicket(id){let t=tickets.find(x=>x.id===id);if(!t)return;if(confirm(`確定要刪除「${t.title||'這張票券'}」嗎？`)){tickets=tickets.filter(x=>x.id!==id);persist();renderTickets();toast('已刪除')}}
 function openDetail(id){let t=tickets.find(x=>x.id===id),c=catMap[t.cat]||catMap.other;if(!t)return;document.getElementById('detailContent').innerHTML=`${t.photo?`<img class="detail-photo" src="${t.photo}" alt="">`:`<div style="height:180px;border:1px dashed var(--line);border-radius:15px;display:grid;place-items:center;font-size:60px;background:#fff">${c.icon}</div>`}<h2>${esc(t.title)}</h2><span class="badge">${c.icon} ${c.label}</span><p style="color:var(--muted);line-height:1.8">${t.date?'📅 '+formatDate(t.date):''}${t.time?' · ⏰ '+t.time:''}<br>${t.venue?'📍 '+esc(t.venue):''}<br>${t.seat?'💺 '+esc(t.seat):''}<br>${t.price?money(t.price):''}${t.companions?'<br>👥 '+esc(t.companions):''}${t.notes?'<br>📝 '+esc(t.notes):''}</p><div class="action-row"><button onclick="quickShow('${id}')">🎟️ 快速出示</button><button onclick="toggleStar('${id}')">${t.starred?'★ 取消收藏':'☆ 收藏'}</button><button onclick="openMap('${t.venue}')">📍 前往場地</button><button onclick="downloadICS('${id}')">📅 加入行程</button><button onclick="toggleUsed('${id}')">${t.used?'↩️ 標記未使用':'✓ 標記已使用'}</button><button onclick="duplicateTicket('${id}')">➕ 複製票券</button><button onclick="editTicket('${id}');closeModal('detailModal')">✏️ 編輯</button><button onclick="deleteTicket('${id}');closeModal('detailModal')">🗑️ 刪除</button></div>`;document.getElementById('detailModal').classList.add('open')}
 function toggleStar(id){let t=tickets.find(x=>x.id===id);t.starred=!t.starred;persist();renderTickets();openDetail(id);toast(t.starred?'已加入收藏':'已取消收藏')}
@@ -146,33 +128,19 @@ function statusText(t){let d=daysUntil(t.date);return t.used?L().used:d===null?L
 function renderTickets(){renderStats();let a=filtered(),el=document.getElementById('cards');if(!a.length){el.innerHTML=`<div class="empty">🎟️<br><br>${L().empty}<br><small>${L().emptyHint}</small></div>`;return}el.innerHTML=a.map(t=>{let c=catMap[t.cat]||catMap.other;return `<article class="ticket"><div class="ticket-top" onclick="openDetail('${t.id}')">${t.photo?`<img class="ticket-thumb" src="${t.photo}" alt="">`:`<div class="ticket-thumb" style="display:grid;place-items:center;font-size:34px">${c.icon}</div>`}<div class="ticket-info"><div class="ticket-title">${esc(t.title||L().unnamed)}</div><div class="ticket-meta">${t.date?formatDate(t.date):L().dateMissing}${t.time?' · '+esc(t.time):''}<br>${t.venue?'📍 '+esc(t.venue):''}${t.seat?' · '+esc(t.seat):''}</div><span class="badge">${c.icon} ${catName(t.cat)} · ${statusText(t)}</span></div><div>${t.starred?'★':''}</div></div><div class="ticket-actions"><button onclick="event.stopPropagation();quickShow('${t.id}')">${L().show}</button><button onclick="event.stopPropagation();editTicket('${t.id}')">${L().edit}</button><button class="danger" onclick="event.stopPropagation();deleteTicket('${t.id}')">${L().delete}</button></div></article>`}).join('')}
 function openForm(id=null){document.getElementById('ticketForm').reset();document.getElementById('editId').value=id||'';selectedCat=id?(tickets.find(t=>t.id===id)?.cat||'other'):'other';document.getElementById('photoPreview').innerHTML=L().noPhoto;if(id){let t=tickets.find(x=>x.id===id);['title','date','time','venue','seat','price','companions','notes'].forEach(k=>document.getElementById(k).value=t[k]||'');document.getElementById('photoPreview').innerHTML=t.photo?`<img src="${t.photo}" alt="">`:L().noPhoto}document.getElementById('formTitle').textContent=id?L().editTicket:L().newTicket;renderCatGrid();let sh=document.querySelector('#formModal .sheet');if(sh)sh.scrollTop=0;document.getElementById('formModal').classList.add('open')}
 function pickPhoto(){document.getElementById('photoPhotos').click()}
-function previewPhoto(e){
- const f=e.target.files&&e.target.files[0]; if(!f)return;
- if(!f.type.startsWith('image/')){toast(appLang==='zh'?'請選擇圖片檔案':appLang==='ja'?'画像ファイルを選択してください':'Please choose an image file');e.target.value='';return}
- const r=new FileReader(); r.onload=()=>document.getElementById('photoPreview').innerHTML=`<img src="${r.result}" alt="">`; r.readAsDataURL(f);
-}let r=new FileReader();r.onload=()=>{document.getElementById('photoPreview').innerHTML=`<img src="${r.result}" alt="">`;window._selectedPhotoData=r.result};r.readAsDataURL(f)}
+function previewPhoto(e){let f=e.target.files&&e.target.files[0];if(!f)return;if(!f.type.startsWith('image/')){toast(appLang==='zh'?'請選擇圖片檔案':appLang==='ja'?'画像ファイルを選択してください':'Please choose an image file');e.target.value='';return}let r=new FileReader();r.onload=()=>{document.getElementById('photoPreview').innerHTML=`<img src="${r.result}" alt="">`;window._selectedPhotoData=r.result};r.readAsDataURL(f)}
 function saveTicket(e){
  e.preventDefault();
- const get=id=>document.getElementById(id);
- const id=get('editId').value;
+ const g=id=>document.getElementById(id);
+ const id=g('editId').value;
  const old=tickets.find(t=>t.id===id);
- const file=get('photoPhotos').files[0];
- const ticket={
-  id:id||uid(),title:get('title').value.trim(),date:get('date').value,time:get('time').value,
-  venue:get('venue').value.trim(),seat:get('seat').value.trim(),price:get('price').value,
-  companions:get('companions').value.trim(),notes:get('notes').value.trim(),
-  cat:selectedCat||'other',photo:old?.photo||'',used:old?.used||false,starred:old?.starred||false,
-  createdAt:old?.createdAt||Date.now()
- };
- const finish=photo=>{
-  ticket.photo=photo||'';
-  if(id) tickets=tickets.map(t=>t.id===id?ticket:t); else tickets=[...tickets,ticket];
-  persist(); closeModal('formModal'); renderTickets(); toast(id?L().updated:L().added);
- };
- if(file){const reader=new FileReader();reader.onload=()=>finish(reader.result);reader.onerror=()=>toast(appLang==='zh'?'照片讀取失敗':appLang==='ja'?'写真の読み込みに失敗しました':'Could not read photo');reader.readAsDataURL(file)}
- else finish(ticket.photo);
+ const input=g('photoPhotos');
+ const f=input&&input.files&&input.files[0];
+ const d={id:id||uid(),title:g('title').value.trim(),date:g('date').value,time:g('time').value,venue:g('venue').value.trim(),seat:g('seat').value.trim(),price:g('price').value,companions:g('companions').value.trim(),notes:g('notes').value.trim(),cat:selectedCat||'other',photo:old?.photo||'',used:old?.used||false,starred:old?.starred||false,createdAt:old?.createdAt||Date.now()};
+ const finish=photo=>{d.photo=photo||'';tickets=id?tickets.map(t=>t.id===id?d:t):[...tickets,d];persist();closeModal('formModal');renderTickets();toast(id?L().updated:L().added)};
+ if(f){const r=new FileReader();r.onload=()=>finish(r.result);r.onerror=()=>toast(appLang==='zh'?'照片讀取失敗':appLang==='ja'?'写真の読み込みに失敗しました':'Could not read photo');r.readAsDataURL(f)}else finish(d.photo);
  return false;
-};tickets=id?tickets.map(t=>t.id===id?d:t):[...tickets,d];persist();closeModal('formModal');renderTickets();toast(id?L().updated:L().added)};if(f){let r=new FileReader();r.onload=()=>finish(r.result);r.readAsDataURL(f)}else finish(old?.photo||'')}
+}
 function deleteTicket(id){let t=tickets.find(x=>x.id===id);if(!t)return;if(confirm((appLang==='zh'?'確定要刪除「':appLang==='ja'?'「':'Delete “')+(t.title||L().unnamed)+(appLang==='zh'?'」嗎？':appLang==='ja'?'」を削除しますか？':'”?'))){tickets=tickets.filter(x=>x.id!==id);persist();renderTickets();closeModal('detailModal');toast(L().deleted)}}
 function openDetail(id){let t=tickets.find(x=>x.id===id),c=catMap[t.cat]||catMap.other;if(!t)return;document.getElementById('detailContent').innerHTML=`${t.photo?`<img class="detail-photo" src="${t.photo}" alt="">`:`<div style="height:180px;border:1px dashed var(--line);border-radius:15px;display:grid;place-items:center;font-size:60px;background:#fff">${c.icon}</div>`}<h2>${esc(t.title||L().unnamed)}</h2><span class="badge">${c.icon} ${catName(t.cat)}</span><p style="color:var(--muted);line-height:1.8">${t.date?'📅 '+formatDate(t.date):''}${t.time?' · ⏰ '+t.time:''}<br>${t.venue?'📍 '+esc(t.venue):''}<br>${t.seat?'💺 '+esc(t.seat):''}<br>${t.price?money(t.price):''}${t.companions?'<br>👥 '+esc(t.companions):''}${t.notes?'<br>📝 '+esc(t.notes):''}</p><div class="action-row"><button onclick="quickShow('${id}')">${L().show}</button><button onclick="toggleStar('${id}')">${t.starred?L().favoriteRemove:L().favoriteAdd}</button><button onclick="openMap('${t.venue}')">${L().map}</button><button onclick="downloadICS('${id}')">${L().calendarAdd}</button><button onclick="toggleUsed('${id}')">${t.used?L().unusedBtn:L().usedBtn}</button><button onclick="duplicateTicket('${id}')">${L().duplicate}</button><button onclick="editTicket('${id}');closeModal('detailModal')">${L().edit}</button><button onclick="deleteTicket('${id}')">${L().delete}</button></div>`;let sh=document.querySelector('#detailModal .sheet');if(sh)sh.scrollTop=0;document.getElementById('detailModal').classList.add('open')}
 function toggleStar(id){let t=tickets.find(x=>x.id===id);if(!t)return;t.starred=!t.starred;persist();renderTickets();openDetail(id);toast(t.starred?L().favOn:L().favOff)}
@@ -186,5 +154,12 @@ function doClearAll(){tickets=[];persist();closeModal('confirmModal');closeModal
 function money(n){return 'NT$ '+(Number(n)||0).toLocaleString()}
 
 applyLanguage();load();
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded',function(){
+  var fab=document.querySelector('.fab');
+  if(fab){fab.onclick=function(e){e.preventDefault();openForm();};}
+});
 </script>
 </body></html>
