@@ -92,37 +92,7 @@ function renderCats(){document.getElementById("catGrid").innerHTML=CATS.map(c=>`
 function renderPhoto(){const el=document.getElementById("photoBox");el.innerHTML=photoData?`<img src="${photoData}"><div style="margin-top:8px"><button type="button" class="secondary" onclick="pickPhoto()">更換</button><button type="button" class="secondary" onclick="photoData='';renderPhoto()">移除</button></div>`:`點擊選擇照片<div style="margin-top:8px"><button type="button" class="secondary" onclick="pickPhoto()">📷 選擇照片</button></div>`}
 function pickPhoto(){let i=document.getElementById("photoInput");if(!i){i=document.createElement("input");i.type="file";i.accept="image/*";i.capture="environment";i.id="photoInput";i.style.display="none";i.onchange=previewPhoto;document.body.appendChild(i)}i.click()}
 function previewPhoto(e){const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{photoData=r.result;renderPhoto()};r.readAsDataURL(f)}
-function saveTicket(e){
- e.preventDefault();
- const g=id=>document.getElementById(id);
- const id=g('editId').value;
- const old=tickets.find(t=>t.id===id);
- const f=g('photoPhotos')?.files?.[0];
- const finish=photo=>{
-  const d={
-   id:id||uid(),title:g('title').value.trim(),date:g('date').value,time:g('time').value,
-   venue:g('venue').value.trim(),seat:g('seat').value.trim(),price:g('price').value,
-   companions:g('companions').value.trim(),notes:g('notes').value.trim(),
-   cat:selectedCat,photo:photo||old?.photo||'',used:old?.used||false,
-   starred:old?.starred||false,createdAt:old?.createdAt||Date.now()
-  };
-  tickets=id?tickets.map(t=>t.id===id?d:t):[...tickets,d];
-  persist();
-  closeModal('formModal');
-  showPage('home');
-  renderTickets();
-  window.scrollTo(0,0);
-  toast(id?L().updated:L().added);
- };
- if(f){
-  const r=new FileReader();
-  r.onload=()=>finish(r.result);
-  r.onerror=()=>toast(appLang==='zh'?'照片讀取失敗':appLang==='ja'?'写真の読み込みに失敗しました':'Could not read photo');
-  r.readAsDataURL(f);
- }else{
-  finish(old?.photo||'');
- }
-};const i=tickets.findIndex(x=>x.id==t.id);if(i>=0)tickets[i]=t;else tickets.push(t);persist();closeEditor();renderFilters();renderTickets();toast(id?"票券已更新":"票券已新增")}
+function saveTicket(e){e.preventDefault();const id=document.getElementById("editId").value,old=tickets.find(t=>t.id==id),t={id:id||uid(),title:document.getElementById("fTitle").value.trim(),date:document.getElementById("fDate").value,time:document.getElementById("fTime").value,venue:document.getElementById("fVenue").value.trim(),seat:document.getElementById("fSeat").value.trim(),price:document.getElementById("fPrice").value,companions:document.getElementById("fCompanions").value.trim(),cat:selectedCat,photo:photoData,notes:document.getElementById("fNotes").value.trim(),used:old?.used||false,starred:old?.starred||false};const i=tickets.findIndex(x=>x.id==t.id);if(i>=0)tickets[i]=t;else tickets.push(t);persist();closeEditor();switchView("tickets");renderFilters();renderTickets();toast(id?"票券已更新":"票券已新增")}
 function editTicket(id){closeDetail();openEditor(id)}
 function deleteTicket(id){const t=tickets.find(x=>x.id==id);if(!t)return;if(confirm(`確定刪除「${t.title||"這張票"}」嗎？`)){tickets=tickets.filter(x=>x.id!=id);persist();closeDetail();renderTickets();toast("票券已刪除")}}
 function toggleStar(id){const t=tickets.find(x=>x.id==id);if(!t)return;t.starred=!t.starred;persist();renderTickets();toast(t.starred?"已加入收藏":"已取消收藏")}
