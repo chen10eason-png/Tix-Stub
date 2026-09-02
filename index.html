@@ -29,11 +29,14 @@ main{padding:12px 16px 100px}.view{display:none}.view.active{display:block}.filt
 .toast{position:fixed;left:50%;bottom:90px;transform:translate(-50%,20px);opacity:0;background:var(--navy);color:#fff;border-radius:11px;padding:10px 14px;font-size:12px;z-index:150;transition:.2s}.toast.show{opacity:1;transform:translate(-50%,0)}
 @media(max-width:480px){.form-grid{grid-template-columns:1fr}.field.full{grid-column:auto}.cat-grid{grid-template-columns:repeat(4,1fr)}}
 </style>
+<style id="tixSettingsSheetStyle">
+.tix-settings-sheet{max-width:520px}.tix-settings-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px}.tix-settings-brand{font-size:10px;letter-spacing:2px;font-weight:900;opacity:.5;margin-bottom:3px}.tix-setting-card{display:flex;gap:12px;align-items:flex-start;background:#fff;border:1px solid var(--line);border-radius:16px;padding:14px;margin:10px 0}.tix-danger-card{background:#fff}.tix-setting-icon{width:38px;height:38px;border-radius:12px;background:var(--ice);display:flex;align-items:center;justify-content:center;font-size:18px;flex:0 0 auto}.tix-setting-main{min-width:0;flex:1}.tix-setting-title{font-weight:900;font-size:14px;margin:2px 0 4px}.tix-setting-desc{font-size:11px;color:var(--muted);line-height:1.45;margin-bottom:9px}.tix-setting-main select{width:100%;box-sizing:border-box;border:1px solid var(--line);background:#fff;border-radius:10px;padding:9px 10px;font-weight:800;font-size:13px;color:var(--ink)}.tix-danger-button{border:1px solid var(--danger);background:#fff;color:var(--danger);border-radius:10px;padding:9px 13px;font-weight:900;font-size:12px}.tix-settings-close{width:100%;margin-top:2px}
+</style>
 </head>
 <body>
 <div class="app">
 <header>
-<div class="brand"><div><h1>TIX<span>·</span>STUB</h1><p>Collect Every Ticket Memory</p></div><button class="icon-btn" onclick="openSettings()">⚙️</button></div>
+<div class="brand"><div><h1>TIX<span>·</span>STUB</h1><p>Collect Every Ticket Memory</p></div><button class="icon-btn" onclick="tixOpenSettings()">⚙️</button></div>
 <div class="search"><input id="search" placeholder="搜尋活動、場地、座位、同行人、備註…" oninput="renderTickets()"></div>
 <nav class="main-nav"><button class="nav-btn active" data-view="tickets" onclick="switchView('tickets')">🎟️ 我的票券</button><button class="nav-btn" data-view="calendar" onclick="switchView('calendar')">📅 行程</button><button class="nav-btn" data-view="spending" onclick="switchView('spending')">💰 消費分析</button></nav>
 </header>
@@ -67,6 +70,32 @@ main{padding:12px 16px 100px}.view{display:none}.view.active{display:block}.filt
 <div class="calendar-card" style="margin-top:10px"><div class="section-title">🗑️ 清除資料</div><button class="secondary danger" style="width:100%" onclick="clearAll()">清除全部票券</button></div>
 </div></div>
 <div class="quick" id="quick"><button class="quick-close" onclick="closeQuick()">✕</button><div class="quick-inner"><div id="quickPhoto"></div><h2 id="quickTitle"></h2><p id="quickMeta"></p></div></div>
+<div class="overlay" id="tixSettingsOverlay" style="display:none;">
+  <div class="sheet tix-settings-sheet">
+    <div class="tix-settings-head">
+      <div><div class="tix-settings-brand">TIX·STUB</div><h2 id="tixSettingsTitle">⚙️ 設定</h2></div>
+      <button class="close" type="button" onclick="tixCloseSettings()">✕</button>
+    </div>
+    <div class="tix-setting-card">
+      <div class="tix-setting-icon">🌐</div><div class="tix-setting-main">
+        <div class="tix-setting-title" id="tixLanguageTitle">語言</div>
+        <div class="tix-setting-desc" id="tixLanguageDesc">選擇 TIX·STUB 顯示的語言</div>
+        <select id="tixLanguageSelect" onchange="tixChangeLanguage(this.value)">
+          <option value="zh">繁體中文</option><option value="en">English</option><option value="ja">日本語</option>
+        </select>
+      </div>
+    </div>
+    <div class="tix-setting-card tix-danger-card">
+      <div class="tix-setting-icon">🗑️</div><div class="tix-setting-main">
+        <div class="tix-setting-title" id="tixClearTitle">清除全部票券</div>
+        <div class="tix-setting-desc" id="tixClearDesc">刪除所有已儲存的票券資料</div>
+        <button type="button" class="tix-danger-button" onclick="tixConfirmClear()" id="tixClearButton">清除全部</button>
+      </div>
+    </div>
+    <button type="button" class="btn-secondary tix-settings-close" onclick="tixCloseSettings()" id="tixSettingsClose">關閉</button>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -110,6 +139,18 @@ function exportData(){const a=document.createElement("a");a.href=URL.createObjec
 function importData(e){const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const x=JSON.parse(r.result),a=Array.isArray(x)?x:x.tickets;if(!Array.isArray(a))throw 0;tickets=a;persist();renderFilters();renderTickets();toast("備份已還原")}catch(_){toast("備份格式不正確")}};r.readAsText(f);e.target.value=""}
 function clearAll(){if(!tickets.length){toast("目前沒有票券");return}if(confirm("確定要刪除全部票券嗎？")){tickets=[];persist();closeSettings();renderTickets();toast("已清除全部票券")}}
 renderFilters();renderTickets();
+</script>
+<script>
+(function(){
+const L={zh:{settings:"⚙️ 設定",language:"語言",desc:"選擇 TIX·STUB 顯示的語言",clear:"清除全部票券",clearDesc:"刪除所有已儲存的票券資料",clearBtn:"清除全部",close:"關閉",confirm:"確定要清除全部票券嗎？此動作無法復原。",done:"已清除全部票券",search:"搜尋活動、場地…"},en:{settings:"⚙️ Settings",language:"Language",desc:"Choose the language used by TIX·STUB",clear:"Clear All Tickets",clearDesc:"Delete all saved ticket data",clearBtn:"Clear All",close:"Close",confirm:"Clear all tickets? This cannot be undone.",done:"All tickets cleared",search:"Search events, venues…"},ja:{settings:"⚙️ 設定",language:"言語",desc:"TIX·STUBの表示言語を選択",clear:"すべてのチケットを削除",clearDesc:"保存したすべてのチケットデータを削除",clearBtn:"すべて削除",close:"閉じる",confirm:"すべてのチケットを削除しますか？元に戻せません。",done:"すべてのチケットを削除しました",search:"イベント・会場を検索…"}};
+let lang=localStorage.getItem("tixstub_language")||"zh";
+window.tixOpenSettings=function(){const e=document.getElementById("tixSettingsOverlay");if(e)e.style.display="flex";apply()};
+window.tixCloseSettings=function(){const e=document.getElementById("tixSettingsOverlay");if(e)e.style.display="none"};
+window.tixChangeLanguage=function(v){lang=L[v]?v:"zh";localStorage.setItem("tixstub_language",lang);apply()};
+window.tixConfirmClear=function(){if(!confirm(L[lang].confirm))return;["tickets","tixstub_tickets","tixstubTickets","ticketData"].forEach(k=>{try{localStorage.removeItem(k)}catch(e){}});if(Array.isArray(window.tickets))window.tickets.length=0;if(typeof window.render==="function")window.render();tixCloseSettings();if(typeof window.showToast==="function")window.showToast(L[lang].done)};
+function apply(){const t=L[lang];document.documentElement.lang=lang==="zh"?"zh-Hant":lang;let s=document.getElementById("tixLanguageSelect");if(s)s.value=lang;const m={tixSettingsTitle:"settings",tixLanguageTitle:"language",tixLanguageDesc:"desc",tixClearTitle:"clear",tixClearDesc:"clearDesc",tixClearButton:"clearBtn",tixSettingsClose:"close"};Object.keys(m).forEach(id=>{let e=document.getElementById(id);if(e)e.textContent=t[m[id]]});let q=document.querySelector("#searchInput,input[type=search]");if(q)q.placeholder=t.search}
+if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",apply);else apply();
+})();
 </script>
 </body>
 </html>
