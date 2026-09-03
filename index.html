@@ -67,35 +67,19 @@ main{padding:12px 16px 100px}.view{display:none}.view.active{display:block}.filt
 <div class="modal" id="settingsModal"><div class="sheet">
 <div class="sheet-head"><h2>設定與備份</h2><button class="close" onclick="closeSettings()">✕</button></div>
 <div class="calendar-card"><div class="section-title">💾 資料備份</div><p class="muted">匯出 JSON 可備份票券資料；在另一台裝置可匯入。</p><div class="form-actions"><button class="secondary" onclick="exportData()">⬇️ 匯出</button><button class="secondary" onclick="document.getElementById('importFile').click()">⬆️ 匯入</button><input id="importFile" type="file" accept=".json,application/json" style="display:none" onchange="importData(event)"></div></div>
+
+<div class="calendar-card" style="margin-top:10px">
+  <div class="section-title">🌐 <span id="languageTitle">語言</span></div>
+  <p class="muted" id="languageDesc">選擇 TIX·STUB 顯示的語言</p>
+  <select id="languageSelect" onchange="changeLanguage(this.value)" style="width:100%;padding:10px;border:1px solid var(--line);border-radius:10px;background:#fff;color:var(--ink);font-weight:800">
+    <option value="zh">繁體中文</option>
+    <option value="en">English</option>
+    <option value="ja">日本語</option>
+  </select>
+</div>
 <div class="calendar-card" style="margin-top:10px"><div class="section-title">🗑️ 清除資料</div><button class="secondary danger" style="width:100%" onclick="clearAll()">清除全部票券</button></div>
 </div></div>
 <div class="quick" id="quick"><button class="quick-close" onclick="closeQuick()">✕</button><div class="quick-inner"><div id="quickPhoto"></div><h2 id="quickTitle"></h2><p id="quickMeta"></p></div></div>
-<div class="overlay" id="tixSettingsOverlay" style="display:none;">
-  <div class="sheet tix-settings-sheet">
-    <div class="tix-settings-head">
-      <div><div class="tix-settings-brand">TIX·STUB</div><h2 id="tixSettingsTitle">⚙️ 設定</h2></div>
-      <button class="close" type="button" onclick="tixCloseSettings()">✕</button>
-    </div>
-    <div class="tix-setting-card">
-      <div class="tix-setting-icon">🌐</div><div class="tix-setting-main">
-        <div class="tix-setting-title" id="tixLanguageTitle">語言</div>
-        <div class="tix-setting-desc" id="tixLanguageDesc">選擇 TIX·STUB 顯示的語言</div>
-        <select id="tixLanguageSelect" onchange="tixChangeLanguage(this.value)">
-          <option value="zh">繁體中文</option><option value="en">English</option><option value="ja">日本語</option>
-        </select>
-      </div>
-    </div>
-    <div class="tix-setting-card tix-danger-card">
-      <div class="tix-setting-icon">🗑️</div><div class="tix-setting-main">
-        <div class="tix-setting-title" id="tixClearTitle">清除全部票券</div>
-        <div class="tix-setting-desc" id="tixClearDesc">刪除所有已儲存的票券資料</div>
-        <button type="button" class="tix-danger-button" onclick="tixConfirmClear()" id="tixClearButton">清除全部</button>
-      </div>
-    </div>
-    <button type="button" class="btn-secondary tix-settings-close" onclick="tixCloseSettings()" id="tixSettingsClose">關閉</button>
-  </div>
-</div>
-
 <div class="toast" id="toast"></div>
 
 <script>
@@ -119,7 +103,7 @@ function openEditor(id=null){document.getElementById("ticketForm").reset();photo
 function closeEditor(){document.getElementById("editorModal").classList.remove("open")}
 function renderCats(){document.getElementById("catGrid").innerHTML=CATS.map(c=>`<button type="button" class="cat-option ${selectedCat==c[0]?"selected":""}" onclick="selectedCat='${c[0]}';renderCats()"><strong>${c[2]}</strong>${c[1]}</button>`).join("")}
 function renderPhoto(){const el=document.getElementById("photoBox");el.innerHTML=photoData?`<img src="${photoData}"><div style="margin-top:8px"><button type="button" class="secondary" onclick="pickPhoto()">更換</button><button type="button" class="secondary" onclick="photoData='';renderPhoto()">移除</button></div>`:`點擊選擇照片<div style="margin-top:8px"><button type="button" class="secondary" onclick="pickPhoto()">📷 選擇照片</button></div>`}
-function pickPhoto(){let i=document.getElementById("photoInput");if(!i){i=document.createElement("input");i.type="file";i.accept="image/*";i.id="photoInput";i.style.display="none";i.onchange=previewPhoto;document.body.appendChild(i)}i.click()}
+function pickPhoto(){let i=document.getElementById("photoInput");if(!i){i=document.createElement("input");i.type="file";i.accept="image/*";ii.id="photoInput";i.style.display="none";i.onchange=previewPhoto;document.body.appendChild(i)}i.click()}
 function previewPhoto(e){const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{photoData=r.result;renderPhoto()};r.readAsDataURL(f)}
 function saveTicket(e){e.preventDefault();const id=document.getElementById("editId").value,old=tickets.find(t=>t.id==id),t={id:id||uid(),title:document.getElementById("fTitle").value.trim(),date:document.getElementById("fDate").value,time:document.getElementById("fTime").value,venue:document.getElementById("fVenue").value.trim(),seat:document.getElementById("fSeat").value.trim(),price:document.getElementById("fPrice").value,companions:document.getElementById("fCompanions").value.trim(),cat:selectedCat,photo:photoData,notes:document.getElementById("fNotes").value.trim(),used:old?.used||false,starred:old?.starred||false};const i=tickets.findIndex(x=>x.id==t.id);if(i>=0)tickets[i]=t;else tickets.push(t);persist();closeEditor();switchView("tickets");renderFilters();renderTickets();toast(id?"票券已更新":"票券已新增")}
 function editTicket(id){closeDetail();openEditor(id)}
@@ -152,5 +136,36 @@ function apply(){const t=L[lang];document.documentElement.lang=lang==="zh"?"zh-H
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",apply);else apply();
 })();
 </script>
+
+<script>
+(function(){
+  const LANGS={
+    zh:{language:"語言",desc:"選擇 TIX·STUB 顯示的語言",search:"搜尋活動、場地…"},
+    en:{language:"Language",desc:"Choose the language used by TIX·STUB",search:"Search events, venues…"},
+    ja:{language:"言語",desc:"TIX·STUBの表示言語を選択",search:"イベント・会場を検索…"}
+  };
+  let current=localStorage.getItem("tixstub_language")||"zh";
+  window.changeLanguage=function(v){
+    current=LANGS[v]?v:"zh";
+    localStorage.setItem("tixstub_language",current);
+    applyLanguage();
+  };
+  function applyLanguage(){
+    const t=LANGS[current];
+    document.documentElement.lang=current==="zh"?"zh-Hant":current;
+    const sel=document.getElementById("languageSelect");
+    if(sel)sel.value=current;
+    const a=document.getElementById("languageTitle");
+    const b=document.getElementById("languageDesc");
+    if(a)a.textContent=t.language;
+    if(b)b.textContent=t.desc;
+    const q=document.getElementById("search");
+    if(q)q.placeholder=t.search;
+  }
+  if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",applyLanguage);
+  else applyLanguage();
+})();
+</script>
+
 </body>
 </html>
